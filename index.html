@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#101620">
+  <meta name="description" content="Offline-first time tracking. Every tap is logged locally with a timestamp.">
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="icon" href="./icons/icon-192.png">
+  <link rel="stylesheet" href="./style.css">
+  <title>Time Tracker</title>
+  <script src="./helpers.js"></script>
+</head>
+<body>
+  <div id="boot-screen" class="boot">
+    <div class="boot-card">
+      <div class="boot-glyph">⏱️</div>
+      <h1>Time Tracker</h1>
+      <p id="boot-status">Starting…</p>
+    </div>
+  </div>
+
+  <header class="topbar">
+    <h1>⏱️ Time Tracker</h1>
+    <span id="app-status" class="status-pill">Ready</span>
+  </header>
+
+  <main>
+    <section id="screen-tap">
+      <p class="hint">Tap what you are doing. Each tap is logged instantly with the current time.</p>
+      <div id="icon-grid" class="icon-grid"></div>
+      <div id="last-logged" class="last-logged">Ready</div>
+    </section>
+
+    <section id="screen-day" class="hidden">
+      <div class="day-nav">
+        <button type="button" class="day-arrow" data-action="dayPrev" aria-label="Previous day">‹</button>
+        <div class="day-title">
+          <strong id="selected-day">—</strong>
+          <small id="day-count">0 entries</small>
+        </div>
+        <button type="button" class="day-arrow" data-action="dayNext" aria-label="Next day">›</button>
+      </div>
+      <button type="button" class="today-btn" data-action="dayToday">Jump to today</button>
+      <div id="entry-list" class="entry-list"></div>
+      <p id="day-hint" class="hint"></p>
+      <button type="button" class="export-btn" data-action="export">⬇ Export all data (CSV)</button>
+    </section>
+  </main>
+
+  <nav class="bottom-nav">
+    <button type="button" id="nav-tap" data-action="screen" data-value="tap">⌂<span>Tap</span></button>
+    <button type="button" id="nav-day" data-action="screen" data-value="day">▤<span>Day</span></button>
+  </nav>
+
+  <div id="keyboard-overlay" class="overlay hidden">
+    <div class="overlay-card">
+      <h2 id="kb-title">Type exact activity</h2>
+      <div id="edit-time-row" class="edit-time-row hidden">
+        <label for="edit-time">Time</label>
+        <input id="edit-time" type="time" aria-label="Entry time">
+      </div>
+      <input id="kb-text" class="kb-text" type="text" readonly aria-label="Activity text">
+      <div id="kb-keys" class="kb-keys"></div>
+      <div class="kb-actions">
+        <button type="button" class="secondary" data-action="cancel">Cancel</button>
+        <button type="button" id="kb-save" class="primary" data-action="save">Log entry</button>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="./app.js"></script>
+</body>
+</html>

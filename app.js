@@ -21,8 +21,12 @@ async function boot() {
     );
 
     status("Starting application…");
-    const response = fetch(new URL("./dist/time-tracking.wasm", import.meta.url));
-    const result = await WebAssembly.instantiateStreaming(response, importObject);
+    // Fetch as bytes rather than instantiateStreaming: Android WebView's
+    // asset loader does not always send application/wasm for .wasm files.
+    const response = await fetch(new URL("./dist/time-tracking.wasm", import.meta.url));
+    if (!response.ok) throw new Error(`Could not load wasm (${response.status})`);
+    const bytes = await response.arrayBuffer();
+    const result = await WebAssembly.instantiate(bytes, importObject);
     const exports = result.instance.exports;
     Object.assign(exportsRef, exports);
 
@@ -36,24 +40,32 @@ async function boot() {
       ev.preventDefault();
       const action = el.dataset.action;
       const value = el.dataset.value || "";
+
+      // Show and focus the field inside the click gesture so Android opens
+      // its native keyboard. The Haskell render will fill in the initial text.
+      if (action === "type" || action === "edit") {
+        document.getElementById("keyboard-overlay").classList.remove("hidden");
+        document.getElementById("kb-text").focus();
+        globalThis.TimeTrackerNative?.showKeyboard?.();
+      }
+      if (action === "cancel") {
+        document.getElementById("kb-text").blur();
+        globalThis.TimeTrackerNative?.hideKeyboard?.();
+      }
+
       Promise.resolve(exports.onAction(action, value)).catch((err) =>
         globalThis.TT.setText("app-status", `Error: ${err}`)
       );
     });
 
-    // The on-screen keyboard is primary, but a hardware keyboard also works.
-    document.addEventListener("keydown", (ev) => {
-      const overlay = document.getElementById("keyboard-overlay");
-      if (!overlay || overlay.classList.contains("hidden")) return;
-      if (document.activeElement?.id === "edit-time") return;
-      let key = null;
-      if (ev.key === "Backspace") key = "backspace";
-      else if (ev.key === "Enter") key = "enter";
-      else if (ev.key === " ") key = "space";
-      else if (ev.key.length === 1) key = ev.key;
-      if (key === null) return;
+    // Enter on the native keyboard submits the dialog.
+    document.getElementById("kb-form").addEventListener("submit", (ev) => {
       ev.preventDefault();
-      Promise.resolve(exports.onAction("key", key)).catch(console.error);
+      document.getElementById("kb-text").blur();
+      globalThis.TimeTrackerNative?.hideKeyboard?.();
+      Promise.resolve(exports.onAction("save", "")).catch((err) =>
+        globalThis.TT.setText("app-status", `Error: ${err}`)
+      );
     });
 
     await exports.start();

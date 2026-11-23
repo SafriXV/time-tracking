@@ -1,6 +1,6 @@
 /* Cache-first service worker: after the first load the app never needs the
  * network.  Bump CACHE name whenever the shell changes. */
-const CACHE = "time-tracking-v1";
+const CACHE = "time-tracking-v2";
 
 const ASSETS = [
   "./",

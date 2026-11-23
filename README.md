@@ -61,6 +61,12 @@ nix develop
 
 ## Build the Android APK
 
+The latest prebuilt APK is available on the
+[Releases page](https://github.com/SafriXV/time-tracking/releases/latest) —
+download `time-tracking.apk` and open it on your phone.
+
+To build it yourself:
+
 ```sh
 nix develop .#android --command ./scripts/build-apk.sh
 ```

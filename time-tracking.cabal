@@ -1,0 +1,15 @@
+cabal-version:      2.4
+name:               time-tracking
+version:            0.1.0.0
+synopsis:           Offline-first time tracker compiled to WebAssembly
+build-type:         Simple
+
+executable time-tracking-wasm
+  main-is:          Main.hs
+  hs-source-dirs:   app
+  default-language: Haskell2010
+  build-depends:    base >=4.18 && <5, ghc-experimental
+  ghc-options:      -O1
+                    -no-hs-main
+                    -optl-mexec-model=reactor
+                    -optl-Wl,--export=start,--export=onAction

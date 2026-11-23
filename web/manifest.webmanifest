@@ -1,0 +1,15 @@
+{
+  "name": "Time Tracker",
+  "short_name": "TimeTracker",
+  "description": "Offline-first time tracking. Every tap is logged locally with a timestamp.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#101620",
+  "theme_color": "#101620",
+  "icons": [
+    { "src": "./icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "./icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}

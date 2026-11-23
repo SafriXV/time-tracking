@@ -55,17 +55,20 @@
 
   <div id="keyboard-overlay" class="overlay hidden">
     <div class="overlay-card">
-      <h2 id="kb-title">Type exact activity</h2>
-      <div id="edit-time-row" class="edit-time-row hidden">
-        <label for="edit-time">Time</label>
-        <input id="edit-time" type="time" aria-label="Entry time">
-      </div>
-      <input id="kb-text" class="kb-text" type="text" readonly aria-label="Activity text">
-      <div id="kb-keys" class="kb-keys"></div>
-      <div class="kb-actions">
-        <button type="button" class="secondary" data-action="cancel">Cancel</button>
-        <button type="button" id="kb-save" class="primary" data-action="save">Log entry</button>
-      </div>
+      <h2 id="kb-title">Exact activity</h2>
+      <form id="kb-form">
+        <div id="edit-time-row" class="edit-time-row hidden">
+          <label for="edit-time">Time</label>
+          <input id="edit-time" type="time" aria-label="Entry time">
+        </div>
+        <input id="kb-text" class="kb-text" type="text" autocomplete="off"
+               autocapitalize="sentences" spellcheck="true" enterkeyhint="done"
+               placeholder="What exactly did you do?" aria-label="Activity text">
+        <div class="kb-actions">
+          <button type="button" class="secondary" data-action="cancel">Cancel</button>
+          <button type="submit" id="kb-save" class="primary">Log entry</button>
+        </div>
+      </form>
     </div>
   </div>
 

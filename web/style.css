@@ -247,9 +247,9 @@ main { padding: 16px; max-width: 640px; margin: 0 auto; }
 }
 .kb-text {
   width: 100%;
-  min-height: 54px;
+  min-height: 56px;
   padding: 12px;
-  margin-bottom: 12px;
+  margin-bottom: 4px;
   font: inherit;
   font-size: 18px;
   color: var(--ink);
@@ -257,18 +257,7 @@ main { padding: 16px; max-width: 640px; margin: 0 auto; }
   border: 1px solid var(--accent);
   border-radius: 12px;
 }
-.kb-keys { display: flex; flex-direction: column; gap: 6px; }
-.kb-row { display: flex; gap: 6px; justify-content: center; }
-.tile.keycap {
-  flex: 1;
-  min-width: 0;
-  min-height: 46px;
-  padding: 4px;
-  border-radius: 8px;
-  background: var(--panel-2);
-}
-.tile.keycap .glyph { font-size: 17px; }
-.tile.keycap .tile-label { display: none; }
+.kb-text:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
 .kb-actions { display: flex; gap: 10px; margin-top: 14px; }
 .kb-actions button { flex: 1; font-size: 16px; }
 .kb-actions .primary {

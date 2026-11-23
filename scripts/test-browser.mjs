@@ -52,16 +52,13 @@ try {
   );
 
   assert.equal(await page.locator("#icon-grid .tile").count(), 17);
-  await page.locator('[data-action="icon"][data-value="water"]').click();
+  await page.locator('[data-action="icon"][data-value="eat"]').click();
   await page.waitForFunction(
     () => document.getElementById("last-logged").textContent.includes("logged at")
   );
 
   await page.locator('[data-action="type"]').click();
-  for (const ch of "team sync") {
-    if (ch === " ") await page.locator('[data-action="key"][data-value="space"]').click();
-    else await page.locator(`[data-action="key"][data-value="${ch}"]`).click();
-  }
+  await page.locator("#kb-text").fill("team sync");
   await page.locator("#kb-save").click();
 
   const count = () => page.evaluate(() => new Promise((resolve, reject) => {
@@ -81,9 +78,13 @@ try {
 
   // Edit the note and its time.
   await page.locator('#entry-list [data-action="edit"][data-value^="id-"], #entry-list [data-action="edit"]').first().click();
+  assert.equal(await page.locator("#kb-text").inputValue(), "team sync");
+  await page.locator("#kb-text").fill("team sync edited");
   await page.locator("#edit-time").fill("12:34");
   await page.locator("#kb-save").click();
-  assert.match(await page.locator("#entry-list").textContent(), /12:34/);
+  const dayText = await page.locator("#entry-list").textContent();
+  assert.match(dayText, /12:34/);
+  assert.match(dayText, /team sync edited/);
 
   // The service worker should make a reload work with the network switched off.
   await page.evaluate(() => navigator.serviceWorker.ready);

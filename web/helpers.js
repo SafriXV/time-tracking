@@ -80,12 +80,6 @@
       if (el) el.value = value;
     },
     append: (id, node) => document.getElementById(id)?.appendChild(node),
-    appendTo: (parent, node) => parent?.appendChild(node),
-    keyRow: () => {
-      const row = document.createElement("div");
-      row.className = "kb-row";
-      return row;
-    },
     tile: (glyph, label, action, payload, extra) => {
       const b = document.createElement("button");
       b.type = "button";
@@ -128,6 +122,12 @@
     },
     confirm: (message) => globalThis.confirm(message),
     download: (name, text) => {
+      // The Android WebView shell exposes a bridge that writes straight to
+      // Downloads. Browsers keep the Blob-based fallback below.
+      if (globalThis.TimeTrackerNative?.saveCsv) {
+        globalThis.TimeTrackerNative.saveCsv(name, text);
+        return;
+      }
       const url = URL.createObjectURL(
         new Blob([text], { type: "text/csv;charset=utf-8" })
       );

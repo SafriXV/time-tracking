@@ -93,21 +93,22 @@ await start();
 
 assert.equal(texts["selected-day"], "2026-11-23");
 assert.equal(children["icon-grid"].length, 17, "16 icons plus the type button");
-assert.equal(children["icon-grid"][0].payload, "water");
+assert.equal(children["icon-grid"][0].payload, "eat");
+assert.equal(children["icon-grid"][15].payload, "shower");
 assert.equal(children["icon-grid"][16].action, "type");
 
 // Tap two icons: each must create a timestamped entry.
-await onAction("icon", "water");
-await onAction("icon", "code");
+await onAction("icon", "eat");
+await onAction("icon", "coding");
 assert.equal(store.length, 2);
-assert.equal(store[0].icon, "water");
-assert.equal(store[1].icon, "code");
+assert.equal(store[0].icon, "eat");
+assert.equal(store[1].icon, "coding");
 assert.equal(store[1].date, "2026-11-23");
 assert.match(texts["last-logged"], /Coding logged at/);
 
-// Use the virtual keyboard for a precise label.
+// Use the native text field for a precise label.
 await onAction("type", "");
-for (const ch of "standup") await onAction("key", ch);
+values["kb-text"] = "standup";
 await onAction("save", "");
 assert.equal(store.length, 3);
 assert.equal(store[2].label, "standup");
@@ -119,7 +120,8 @@ assert.equal(children["entry-list"].length, 3);
 assert.equal(texts["day-count"], "3 entries");
 await onAction("edit", store[2].id);
 assert.equal(values["edit-time"], "09:03");
-await onAction("key", "backspace");
+assert.equal(values["kb-text"], "standup");
+values["kb-text"] = "standu";
 await onAction("save", "");
 assert.equal(store[2].label, "standu");
 

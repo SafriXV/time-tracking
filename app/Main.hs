@@ -130,16 +130,14 @@ data AppState = AppState
   { sEntries  :: [Entry]
   , sDay      :: String
   , sScreen   :: String    -- "tap" or "day"
-  , sDraft    :: String
+  , sDraft    :: String    -- initial value shown in the native text field
   , sEditId   :: Maybe String
   , sKbOpen   :: Bool
-  , sKbLayout :: String    -- "letters" or "numbers"
-  , sShift    :: Bool
   , sLast     :: String
   }
 
 initialState :: AppState
-initialState = AppState [] "" "tap" "" Nothing False "letters" False "Ready"
+initialState = AppState [] "" "tap" "" Nothing False "Ready"
 
 {-# NOINLINE appRef #-}
 appRef :: IORef AppState
@@ -148,38 +146,22 @@ appRef = unsafePerformIO (newIORef initialState)
 -- (key, glyph, label).  These are the 16 always-available logging icons.
 icons :: [(String, String, String)]
 icons =
-  [ ("water",    "💧", "Water")
-  , ("meal",     "🍽️", "Meal")
-  , ("coffee",   "☕", "Coffee")
-  , ("sleep",    "😴", "Sleep")
-  , ("work",     "💼", "Work")
-  , ("study",    "📚", "Study")
-  , ("code",     "💻", "Coding")
-  , ("meeting",  "🤝", "Meeting")
-  , ("exercise", "🏃", "Exercise")
-  , ("travel",   "🚗", "Travel")
-  , ("shopping", "🛒", "Shopping")
-  , ("chores",   "🧹", "Chores")
-  , ("family",   "👪", "Family")
-  , ("health",   "💊", "Health")
-  , ("fun",      "🎉", "Fun")
-  , ("break",    "☕", "Break")
-  ]
-
-letterRows :: [[String]]
-letterRows =
-  [ ["q","w","e","r","t","y","u","i","o","p"]
-  , ["a","s","d","f","g","h","j","k","l"]
-  , ["shift","z","x","c","v","b","n","m","backspace"]
-  , ["layout","space","enter"]
-  ]
-
-numberRows :: [[String]]
-numberRows =
-  [ ["1","2","3","4","5","6","7","8","9","0"]
-  , ["-","/",":",";","(",")","$","&","@","\""]
-  , ["#","*","+","=","%","_",",",".","!","backspace"]
-  , ["layout","space","enter"]
+  [ ("eat",         "🍽", "Eat")
+  , ("dishes",      "🧽", "Dishes")
+  , ("clean",       "🧹", "Clean")
+  , ("call",        "📞", "Call")
+  , ("socialize",   "👥", "Socialize")
+  , ("read",        "📖", "Read")
+  , ("coding",      "💻", "Coding")
+  , ("sleep",       "😴", "Sleep")
+  , ("plan",        "🗓", "Plan")
+  , ("journal",     "📔", "Journal")
+  , ("socials",     "📱", "Check socials")
+  , ("dailies",     "✅", "Dailies")
+  , ("laundry",     "🧺", "Laundry")
+  , ("fold",        "👕", "Fold clothes")
+  , ("blog",        "✍", "Write blog post")
+  , ("shower",      "🚿", "Shower")
   ]
 
 --------------------------------------------------------------------------------
@@ -260,9 +242,7 @@ handle "icon" key =
 
 handle "type" _ = do
   modifyIORef' appRef $ \s -> s
-    { sKbOpen = True, sDraft = "", sEditId = Nothing
-    , sKbLayout = "letters", sShift = False
-    }
+    { sKbOpen = True, sDraft = "", sEditId = Nothing }
   render
 
 handle "edit" ident = do
@@ -273,36 +253,18 @@ handle "edit" ident = do
       hhmm <- fromJSString <$> jsHhmm (eTs entry)
       jsSetValue (t "edit-time") (t hhmm)
       modifyIORef' appRef $ \st -> st
-        { sKbOpen = True, sDraft = eLabel entry
-        , sEditId = Just ident, sKbLayout = "letters", sShift = False
-        }
+        { sKbOpen = True, sDraft = eLabel entry, sEditId = Just ident }
       render
-
-handle "key" key = do
-  s <- readIORef appRef
-  case key of
-    "backspace" -> setDraft (dropLast (sDraft s)) s
-    "space"     -> setDraft (sDraft s ++ " ") s
-    "shift"     -> modifyIORef' appRef (\st -> st { sShift = not (sShift st) }) >> render
-    "layout"    -> modifyIORef' appRef (\st -> st
-                      { sKbLayout = if sKbLayout st == "letters" then "numbers" else "letters"
-                      , sShift = False }) >> render
-    "enter"     -> handle "save" ""
-    "clear"     -> setDraft "" s
-    _           -> setDraft (sDraft s ++ applyShift s key) s
-  where
-    dropLast []     = []
-    dropLast xs     = init xs
-    applyShift st c = if sShift st then upperKey c else c
-    setDraft d st = modifyIORef' appRef (\x -> x { sDraft = d }) >> render
 
 handle "cancel" _ = do
   modifyIORef' appRef (\s -> s { sKbOpen = False, sEditId = Nothing, sDraft = "" })
   render
 
 handle "save" _ = do
+  -- The native keyboard owns the text field; read whatever the user typed.
+  typed <- fromJSString <$> force (jsGetValue (t "kb-text"))
   s <- readIORef appRef
-  let draft = trim (sDraft s)
+  let draft = trim typed
   if null draft
     then status "Type something first"
     else case sEditId s of
@@ -386,9 +348,6 @@ shiftDay n = do
   modifyIORef' appRef (\st -> st { sDay = next })
   render
 
-setStatus :: String -> IO ()
-setStatus message = status message >> render
-
 status :: String -> IO ()
 status = jsSetText (t "app-status") . t
 
@@ -396,10 +355,6 @@ trim :: String -> String
 trim = dropWhileEnd' (== ' ') . dropWhile (== ' ')
   where
     dropWhileEnd' p = reverse . dropWhile p . reverse
-
-upperKey :: String -> String
-upperKey [c] | c >= 'a' && c <= 'z' = [toEnum (fromEnum c - 32)]
-upperKey c = c
 
 --------------------------------------------------------------------------------
 -- Rendering
@@ -472,41 +427,13 @@ formatGap ms
 
 renderKeyboard :: AppState -> IO ()
 renderKeyboard s = do
-  jsClear (t "kb-keys")
-  let rows = if sKbLayout s == "letters" then letterRows else numberRows
-  mapM_ addRow rows
-  jsSetValue (t "kb-text") (t (sDraft s ++ cursor))
+  -- Only seed the field when the dialog opens; while it is open the native
+  -- keyboard and the DOM are the source of truth.
+  jsSetValue (t "kb-text") (t (sDraft s))
   jsShow (t "edit-time-row") (if isJust (sEditId s) then 1 else 0)
   jsSetText (t "kb-save") (t (if isJust (sEditId s) then "Save changes" else "Log entry"))
   jsSetText (t "kb-title")
-    (t (if isJust (sEditId s) then "Edit entry" else "Type exact activity"))
-  where
-    cursor = ""
-    addRow keys = do
-      row <- jsNewRow
-      mapM_ (\key -> labelFor key >>= \lbl -> jsTile lbl lbl (t "key") (t (mapKey key)) (t "keycap")
-                      >>= jsAppendRow row) keys
-      jsAppend (t "kb-keys") row
-    mapKey "shift" = "shift"
-    mapKey "backspace" = "backspace"
-    mapKey "layout" = "layout"
-    mapKey "space" = "space"
-    mapKey "enter" = "enter"
-    mapKey c = c
-    labelFor "shift" = pure (t "⇧")
-    labelFor "backspace" = pure (t "⌫")
-    labelFor "layout" = pure (t (if sKbLayout s == "letters" then "123" else "ABC"))
-    labelFor "space" = pure (t "space")
-    labelFor "enter" = pure (t "↵")
-    labelFor c
-      | sShift s && sKbLayout s == "letters" = pure (t (upperKey c))
-      | otherwise = pure (t c)
-
-foreign import javascript unsafe "globalThis.TT.keyRow()"
-  jsNewRow :: IO JSVal
-
-foreign import javascript unsafe "globalThis.TT.appendTo($1,$2)"
-  jsAppendRow :: JSVal -> JSVal -> IO ()
+    (t (if isJust (sEditId s) then "Edit entry" else "Exact activity"))
 
 foreign import javascript unsafe "globalThis.TT.parseTime($1,$2)"
   jsParseTime :: JSString -> JSString -> IO Double
